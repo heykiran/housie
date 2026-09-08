@@ -235,6 +235,74 @@
     font-weight:800;
   }
 
+  #generateControls.hidden{ display:none; }
+
+  table.ticket-grid td.filled{ cursor:pointer; user-select:none; transition: transform 0.1s ease; }
+  table.ticket-grid td.filled:active{ transform: scale(0.94); }
+  table.ticket-grid td.filled.marked{
+    background: var(--coral) !important;
+    color:#fff;
+    position:relative;
+  }
+  table.ticket-grid td.filled.marked::after{
+    content:"●";
+    position:absolute;
+    top:2px; right:4px;
+    font-size:0.55rem;
+    opacity:0.85;
+  }
+
+  .ticket-actions.hidden{ display:none; }
+  .ticket-actions{
+    background:#fff;
+    border:3px solid var(--ink);
+    border-radius:18px;
+    padding:16px 20px;
+    box-shadow: var(--card-shadow);
+    margin-bottom:26px;
+  }
+  .ticket-action-buttons{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    justify-content:center;
+  }
+  .validation-results{
+    margin-top:14px;
+  }
+  .validation-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    justify-content:center;
+    list-style:none;
+    padding:0;
+    margin:0;
+  }
+  .validation-item{
+    font-family:'Fredoka', sans-serif;
+    font-weight:600;
+    font-size:0.9rem;
+    padding:8px 14px;
+    border-radius:12px;
+    border:2px solid var(--ink);
+    background:var(--cream-deep);
+    color:var(--ink);
+    opacity:0.6;
+  }
+  .validation-item.won{
+    background:var(--grass);
+    color:#fff;
+    opacity:1;
+  }
+  .validation-headline{
+    text-align:center;
+    font-family:'Fredoka', sans-serif;
+    font-weight:700;
+    color:var(--plum);
+    margin:0 0 10px;
+  }
+
   /* ---------- Play tab ---------- */
   .play-layout{
     display:flex;
@@ -451,17 +519,30 @@
 
   <!-- TICKETS TAB -->
   <div id="ticketsTab" class="tab-content">
-    <div class="controls">
-      <label for="ticketCount">How many tickets? (max 50)</label>
-      <input type="number" id="ticketCount" min="1" max="50" value="4">
-      <button class="btn btn-primary" onclick="generateTickets()">✨ Generate Tickets</button>
-      <button class="btn btn-secondary" onclick="window.print()">🖨️ Print Tickets</button>
+    <div id="generateControls">
+      <div class="controls">
+        <label for="ticketCount">How many tickets? (max 50)</label>
+        <input type="number" id="ticketCount" min="1" max="50" value="4">
+        <button class="btn btn-primary" onclick="generateTickets()">✨ Generate Tickets</button>
+        <button class="btn btn-secondary" onclick="window.print()">🖨️ Print Tickets</button>
+      </div>
+      <div class="controls" style="flex-direction:column; align-items:stretch; gap:8px;">
+        <label for="namesInput">Want to guarantee one ticket per person? List names below (one per line) — this overrides the count above, and each ticket is labeled with its owner's name.</label>
+        <textarea id="namesInput" rows="3" placeholder="e.g.&#10;Mom&#10;Dad&#10;Aunt Rita" style="width:100%; font-family:'Nunito'; font-size:0.95rem; padding:10px; border-radius:10px; border:2px solid var(--ink); resize:vertical;"></textarea>
+      </div>
     </div>
-    <div class="controls" style="flex-direction:column; align-items:stretch; gap:8px;">
-      <label for="namesInput">Want to guarantee one ticket per person? List names below (one per line) — this overrides the count above, and each ticket is labeled with its owner's name.</label>
-      <textarea id="namesInput" rows="3" placeholder="e.g.&#10;Mom&#10;Dad&#10;Aunt Rita" style="width:100%; font-family:'Nunito'; font-size:0.95rem; padding:10px; border-radius:10px; border:2px solid var(--ink); resize:vertical;"></textarea>
+
+    <div id="scannedBanner" class="scanned-banner hidden">📲 This is your ticket. Tap a number when it's called to mark it, then hit Validate to see what you've won!</div>
+
+    <div id="ticketActions" class="ticket-actions hidden">
+      <div class="ticket-action-buttons no-print">
+        <button class="btn btn-secondary" onclick="validateCurrentTicket()">✅ Validate My Ticket</button>
+        <button class="btn btn-ghost" onclick="clearCurrentMarks()">🧹 Clear My Marks</button>
+        <button class="btn btn-ghost" onclick="window.print()">🖨️ Print My Ticket</button>
+      </div>
+      <div id="validationResults" class="validation-results"></div>
     </div>
-    <div id="scannedBanner" class="scanned-banner hidden">📲 This is your ticket! Screenshot it or hit print. <a href="javascript:void(0)" onclick="clearScannedTicket()">Generate a fresh set instead</a></div>
+
     <div class="tickets-container" id="ticketsContainer"></div>
   </div>
 
@@ -590,7 +671,8 @@
     return grid;
   }
 
-  function renderTicket(grid, label, qrElId){
+  function renderTicket(grid, label, qrElId, markedSet){
+    markedSet = markedSet || new Set();
     let html = `<div class="ticket-card"><div class="ticket-title">${label}</div><table class="ticket-grid"><tbody>`;
     for(let r=0;r<3;r++){
       html += '<tr>';
@@ -599,7 +681,8 @@
         if(val === null){
           html += '<td class="blank"></td>';
         } else {
-          html += `<td class="filled">${val}</td>`;
+          const isMarked = markedSet.has(val);
+          html += `<td class="filled${isMarked ? ' marked' : ''}" data-num="${val}" onclick="toggleMark('${qrElId}', ${val}, this)">${val}</td>`;
         }
       }
       html += '</tr>';
@@ -629,9 +712,94 @@
     }
   }
 
+  /* ---------------- Marking numbers on a ticket ---------------- */
+  function toggleMark(qrElId, num, cellEl){
+    const item = currentBatchTickets.find(t => t.qrElId === qrElId);
+    if(!item) return;
+    if(!item.marked) item.marked = new Set();
+    if(item.marked.has(num)){
+      item.marked.delete(num);
+      cellEl.classList.remove('marked');
+    } else {
+      item.marked.add(num);
+      cellEl.classList.add('marked');
+    }
+    if(isScannedView){
+      updateUrlMarks(item);
+    }
+  }
+
+  function updateUrlMarks(item){
+    if(!window.history || !window.history.replaceState) return;
+    const params = new URLSearchParams();
+    params.set('t', encodeGridToParam(item.grid));
+    params.set('no', item.label);
+    const marksParam = Array.from(item.marked || []).join('-');
+    if(marksParam) params.set('m', marksParam);
+    const newUrl = window.location.pathname + '?' + params.toString();
+    window.history.replaceState({}, '', newUrl);
+  }
+
+  function clearCurrentMarks(){
+    if(currentBatchTickets.length === 0) return;
+    const item = currentBatchTickets[0];
+    item.marked = new Set();
+    const card = document.querySelector('#ticketsContainer .ticket-card');
+    if(card){
+      card.querySelectorAll('td.filled.marked').forEach(td => td.classList.remove('marked'));
+    }
+    document.getElementById('validationResults').innerHTML = '';
+    if(isScannedView) updateUrlMarks(item);
+  }
+
+  function validateCurrentTicket(){
+    if(currentBatchTickets.length === 0) return;
+    const item = currentBatchTickets[0];
+    const grid = item.grid;
+    const marked = item.marked || new Set();
+
+    const rowNums = [[],[],[]];
+    for(let r=0;r<3;r++){
+      for(let c=0;c<9;c++){
+        if(grid[r][c] !== null) rowNums[r].push(grid[r][c]);
+      }
+    }
+    const allNums = rowNums[0].concat(rowNums[1], rowNums[2]);
+    const markedOnTicket = allNums.filter(n => marked.has(n));
+
+    const results = [
+      { name: 'Early Five', achieved: markedOnTicket.length >= 5 },
+      { name: 'Top Line', achieved: rowNums[0].every(n => marked.has(n)) },
+      { name: 'Middle Line', achieved: rowNums[1].every(n => marked.has(n)) },
+      { name: 'Bottom Line', achieved: rowNums[2].every(n => marked.has(n)) },
+      { name: 'Full House', achieved: allNums.every(n => marked.has(n)) }
+    ];
+
+    const resultsEl = document.getElementById('validationResults');
+    const anyWon = results.some(r => r.achieved);
+    const fullHouse = results.find(r => r.name === 'Full House').achieved;
+
+    let headline = '';
+    if(fullHouse){
+      headline = "🎉 FULL HOUSE — that's every number on your ticket!";
+    } else if(anyWon){
+      headline = "Nice! You've got a claim ready:";
+    } else {
+      headline = markedOnTicket.length + ' of ' + allNums.length + ' numbers marked so far — keep going!';
+    }
+
+    let html = '<div class="validation-headline">' + headline + '</div><ul class="validation-list">';
+    results.forEach(r => {
+      html += '<li class="validation-item' + (r.achieved ? ' won' : '') + '">' + (r.achieved ? '✅' : '⬜') + ' ' + r.name + '</li>';
+    });
+    html += '</ul>';
+    resultsEl.innerHTML = html;
+  }
+
   /* ---------------- QR codes ---------------- */
   let batchCounter = 0;
   let currentBatchTickets = [];
+  let isScannedView = false;
 
   function encodeGridToParam(grid){
     const flat = [];
@@ -721,13 +889,6 @@
     document.getElementById('scannedBanner').classList.add('hidden');
   }
 
-  function clearScannedTicket(){
-    if(window.history && window.history.replaceState){
-      window.history.replaceState({}, '', window.location.pathname);
-    }
-    generateTickets();
-  }
-
   function tryLoadTicketFromUrl(){
     const params = new URLSearchParams(window.location.search);
     const t = params.get('t');
@@ -735,14 +896,29 @@
     const grid = decodeParamToGrid(t);
     if(!grid) return false;
     const label = params.get('no') || 'Your Ticket';
+
+    const markedSet = new Set();
+    const mParam = params.get('m');
+    if(mParam){
+      mParam.split('-').forEach(s => {
+        const n = parseInt(s, 10);
+        if(!isNaN(n)) markedSet.add(n);
+      });
+    }
+
+    isScannedView = true;
+    document.getElementById('generateControls').classList.add('hidden');
+
     const container = document.getElementById('ticketsContainer');
     container.innerHTML = '';
     batchCounter++;
     const qrElId = 'qr-' + batchCounter + '-scanned';
-    container.insertAdjacentHTML('beforeend', renderTicket(grid, label, qrElId));
-    currentBatchTickets = [{ grid, label, qrElId }];
+    container.insertAdjacentHTML('beforeend', renderTicket(grid, label, qrElId, markedSet));
+    currentBatchTickets = [{ grid, label, qrElId, marked: markedSet }];
     renderAllQRCodes();
+
     document.getElementById('scannedBanner').classList.remove('hidden');
+    document.getElementById('ticketActions').classList.remove('hidden');
     return true;
   }
 
