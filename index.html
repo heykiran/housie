@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Housie Night</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FFF8E7;
+    --cream-deep:#FFF1D6;
+    --ink:#33261A;
+    --marigold:#FFB627;
+    --coral:#FF6B5B;
+    --teal:#06AED5;
+    --plum:#7B2D8E;
+    --grass:#2EC4B6;
+    --card-shadow: 6px 6px 0 rgba(51,38,26,0.12);
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    background:
+      radial-gradient(circle at 8% 12%, rgba(255,182,39,0.18) 0, transparent 45%),
+      radial-gradient(circle at 92% 20%, rgba(6,174,213,0.16) 0, transparent 40%),
+      radial-gradient(circle at 50% 95%, rgba(255,107,91,0.14) 0, transparent 45%),
+      var(--cream);
+    color:var(--ink);
+    font-family:'Nunito', sans-serif;
+    min-height:100vh;
+  }
+
+  .wrap{
+    max-width:1000px;
+    margin:0 auto;
+    padding:20px 16px 60px;
+  }
+
+  /* ---------- Header ---------- */
+  .app-header{
+    text-align:center;
+    padding:18px 10px 8px;
+    position:relative;
+  }
+  .app-header h1{
+    font-family:'Fredoka', sans-serif;
+    font-size:clamp(2rem, 6vw, 3.2rem);
+    color:var(--plum);
+    margin:0;
+    letter-spacing:0.5px;
+    text-shadow: 3px 3px 0 var(--marigold);
+  }
+  .app-header p{
+    margin:8px 0 0;
+    font-weight:700;
+    color:var(--ink);
+    opacity:0.75;
+  }
+  .confetti{
+    position:absolute;
+    border-radius:50%;
+    opacity:0.55;
+  }
+
+  /* ---------- Tabs ---------- */
+  .tabs{
+    display:flex;
+    justify-content:center;
+    gap:10px;
+    margin:20px 0 26px;
+    flex-wrap:wrap;
+  }
+  .tab-btn{
+    font-family:'Fredoka', sans-serif;
+    font-size:1.05rem;
+    font-weight:600;
+    padding:12px 26px;
+    border-radius:16px;
+    border:3px solid var(--ink);
+    background:#fff;
+    color:var(--ink);
+    cursor:pointer;
+    box-shadow: var(--card-shadow);
+    transition: transform 0.15s ease;
+  }
+  .tab-btn:hover{ transform: translateY(-2px); }
+  .tab-btn.active{
+    background:var(--teal);
+    color:#fff;
+  }
+  .tab-btn.active.tickets-active{ background:var(--marigold); color:var(--ink); }
+
+  .tab-content.hidden{ display:none; }
+
+  /* ---------- Controls ---------- */
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    background:#fff;
+    border:3px solid var(--ink);
+    border-radius:18px;
+    padding:16px 20px;
+    box-shadow: var(--card-shadow);
+    margin-bottom:26px;
+  }
+  .controls label{
+    font-weight:800;
+    font-size:0.95rem;
+  }
+  .controls input[type=number]{
+    width:70px;
+    padding:8px 10px;
+    border-radius:10px;
+    border:2px solid var(--ink);
+    font-family:'Nunito';
+    font-weight:700;
+    font-size:1rem;
+    text-align:center;
+  }
+  .btn{
+    font-family:'Fredoka', sans-serif;
+    font-weight:600;
+    font-size:1rem;
+    padding:11px 22px;
+    border-radius:14px;
+    border:3px solid var(--ink);
+    cursor:pointer;
+    box-shadow: 4px 4px 0 rgba(51,38,26,0.18);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .btn:active{ transform: translate(2px,2px); box-shadow: 2px 2px 0 rgba(51,38,26,0.18); }
+  .btn-primary{ background:var(--coral); color:#fff; }
+  .btn-secondary{ background:var(--grass); color:#fff; }
+  .btn-ghost{ background:#fff; color:var(--ink); }
+  .btn:disabled{ opacity:0.45; cursor:not-allowed; transform:none; }
+
+  /* ---------- Tickets ---------- */
+  .tickets-container{
+    display:grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap:22px;
+  }
+  .ticket-card{
+    background:#fff;
+    border-radius:18px;
+    border:3px solid var(--ink);
+    box-shadow: var(--card-shadow);
+    padding:14px 14px 16px;
+    position:relative;
+  }
+  .ticket-card::before, .ticket-card::after{
+    content:"";
+    position:absolute;
+    width:18px; height:18px;
+    background:var(--cream-deep);
+    border:3px solid var(--ink);
+    border-radius:50%;
+    top:50%;
+    transform:translateY(-50%);
+  }
+  .ticket-card::before{ left:-12px; }
+  .ticket-card::after{ right:-12px; }
+  .ticket-title{
+    font-family:'Fredoka', sans-serif;
+    font-weight:600;
+    color:var(--plum);
+    text-align:center;
+    margin:2px 0 10px;
+    font-size:1.05rem;
+  }
+  table.ticket-grid{
+    border-collapse:collapse;
+    width:100%;
+  }
+  table.ticket-grid td{
+    border:2px solid var(--ink);
+    width:11.11%;
+    height:46px;
+    text-align:center;
+    font-family:'Fredoka', sans-serif;
+    font-weight:600;
+    font-size:1.05rem;
+    color:var(--ink);
+    background:var(--cream);
+  }
+  table.ticket-grid td.filled:nth-child(odd){ background: #FFE9B8; }
+  table.ticket-grid td.filled:nth-child(even){ background: #D7F5F1; }
+  table.ticket-grid td.blank{ background:repeating-linear-gradient(45deg, #f2ede0, #f2ede0 6px, #eae3d2 6px, #eae3d2 12px); }
+
+  /* ---------- Play tab ---------- */
+  .play-layout{
+    display:flex;
+    flex-direction:column;
+    gap:24px;
+    align-items:center;
+  }
+
+  .caller-panel{
+    background:#fff;
+    border:3px solid var(--ink);
+    border-radius:22px;
+    box-shadow: var(--card-shadow);
+    padding:26px 22px;
+    width:100%;
+    max-width:520px;
+    text-align:center;
+  }
+
+  .coin-stage{
+    perspective: 800px;
+    height:150px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin-bottom:14px;
+  }
+  .coin{
+    width:130px;
+    height:130px;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #FFD873, var(--marigold) 60%, #E29400 100%);
+    border:4px solid var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Fredoka', sans-serif;
+    font-weight:700;
+    font-size:2.6rem;
+    color:var(--ink);
+    box-shadow: 0 6px 0 rgba(51,38,26,0.25);
+    transform-style: preserve-3d;
+  }
+  .coin.spin{
+    animation: flip 0.9s ease-out;
+  }
+  @keyframes flip{
+    0%{ transform: rotateY(0deg) scale(1); }
+    40%{ transform: rotateY(900deg) scale(1.08); }
+    70%{ transform: rotateY(1260deg) scale(1.04); }
+    100%{ transform: rotateY(1440deg) scale(1); }
+  }
+  .coin-label{
+    font-weight:800;
+    color:var(--plum);
+    margin-bottom:2px;
+    letter-spacing:0.5px;
+  }
+
+  .history-row{
+    display:flex;
+    justify-content:center;
+    gap:8px;
+    flex-wrap:wrap;
+    margin-top:16px;
+  }
+  .history-chip{
+    width:38px; height:38px;
+    border-radius:50%;
+    background:var(--cream-deep);
+    border:2px solid var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fredoka', sans-serif;
+    font-weight:600;
+    font-size:0.95rem;
+    color:var(--ink);
+    opacity:0.55;
+  }
+  .history-chip:last-child{
+    opacity:1;
+    background:var(--coral);
+    color:#fff;
+    transform:scale(1.12);
+  }
+
+  .caller-actions{
+    display:flex;
+    gap:12px;
+    justify-content:center;
+    margin-top:18px;
+    flex-wrap:wrap;
+  }
+
+  .funny-line{
+    margin-top:14px;
+    min-height:28px;
+    font-family:'Fredoka', sans-serif;
+    font-weight:600;
+    font-size:1.05rem;
+    color:var(--plum);
+    font-style:italic;
+  }
+
+  .status-line{
+    margin-top:8px;
+    font-weight:700;
+    color:var(--ink);
+    opacity:0.8;
+  }
+
+  /* Board */
+  .board-panel{
+    background:#fff;
+    border:3px solid var(--ink);
+    border-radius:22px;
+    box-shadow: var(--card-shadow);
+    padding:20px;
+    width:100%;
+  }
+  .board-title{
+    font-family:'Fredoka', sans-serif;
+    color:var(--plum);
+    text-align:center;
+    margin:0 0 14px;
+  }
+  .board-grid{
+    display:grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap:6px;
+  }
+  .board-cell{
+    aspect-ratio:1/1;
+    border-radius:8px;
+    border:2px solid var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Fredoka', sans-serif;
+    font-weight:600;
+    font-size:0.9rem;
+    background:var(--cream);
+    color:var(--ink);
+  }
+  .board-cell.called{
+    background:var(--grass);
+    color:#fff;
+  }
+  .board-cell.current{
+    background:var(--coral);
+    color:#fff;
+    transform:scale(1.08);
+  }
+
+  @media (min-width: 760px){
+    .play-layout{ flex-direction:row; align-items:flex-start; }
+    .caller-panel{ flex:0 0 380px; }
+    .board-panel{ flex:1; }
+  }
+
+  /* ---------- Print ---------- */
+  @media print{
+    body{ background:#fff; }
+    .app-header, .tabs, .controls, #playTab, .no-print{ display:none !important; }
+    #ticketsTab.hidden{ display:block !important; }
+    .tickets-container{ display:block; }
+    .ticket-card{
+      box-shadow:none;
+      break-inside:avoid;
+      page-break-inside:avoid;
+      margin-bottom:18px;
+      border:2px solid #000;
+    }
+    .ticket-card::before, .ticket-card::after{ display:none; }
+    table.ticket-grid td{ border-color:#000; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="app-header">
+    <h1>🎉 Housie Night 🎉</h1>
+    <p>Tickets, tokens &amp; family fun</p>
+  </div>
+
+  <div class="tabs no-print">
+    <button class="tab-btn tickets-active active" id="tabBtnTickets" onclick="showTab('tickets')">🎟️ Tickets</button>
+    <button class="tab-btn" id="tabBtnPlay" onclick="showTab('play')">🪙 Play</button>
+  </div>
+
+  <!-- TICKETS TAB -->
+  <div id="ticketsTab" class="tab-content">
+    <div class="controls">
+      <label for="ticketCount">How many tickets?</label>
+      <input type="number" id="ticketCount" min="1" max="12" value="4">
+      <button class="btn btn-primary" onclick="generateTickets()">✨ Generate Tickets</button>
+      <button class="btn btn-secondary" onclick="window.print()">🖨️ Print Tickets</button>
+    </div>
+    <div class="tickets-container" id="ticketsContainer"></div>
+  </div>
+
+  <!-- PLAY TAB -->
+  <div id="playTab" class="tab-content hidden">
+    <div class="play-layout">
+      <div class="caller-panel">
+        <div class="coin-label">Current Number</div>
+        <div class="coin-stage">
+          <div class="coin" id="coin">?</div>
+        </div>
+        <div class="caller-actions">
+          <button class="btn btn-primary" id="drawBtn" onclick="drawNumber()">🪙 Draw Number</button>
+          <button class="btn btn-ghost" onclick="resetGame()">🔄 Reset Game</button>
+        </div>
+        <div class="funny-line" id="funnyLine">&nbsp;</div>
+        <div class="status-line" id="statusLine">90 numbers left in the bag</div>
+        <div class="coin-label" style="margin-top:18px;">Last 10 Called</div>
+        <div class="history-row" id="historyRow"></div>
+      </div>
+
+      <div class="board-panel">
+        <h3 class="board-title">Number Board</h3>
+        <div class="board-grid" id="boardGrid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ---------------- Tabs ---------------- */
+  function showTab(which){
+    const ticketsTab = document.getElementById('ticketsTab');
+    const playTab = document.getElementById('playTab');
+    const btnT = document.getElementById('tabBtnTickets');
+    const btnP = document.getElementById('tabBtnPlay');
+    if(which==='tickets'){
+      ticketsTab.classList.remove('hidden');
+      playTab.classList.add('hidden');
+      btnT.classList.add('active','tickets-active');
+      btnP.classList.remove('active');
+    } else {
+      playTab.classList.remove('hidden');
+      ticketsTab.classList.add('hidden');
+      btnP.classList.add('active');
+      btnT.classList.remove('active','tickets-active');
+    }
+  }
+
+  /* ---------------- Ticket generation ---------------- */
+  const COL_RANGES = [[1,9],[10,19],[20,29],[30,39],[40,49],[50,59],[60,69],[70,79],[80,90]];
+
+  function shuffle(arr){
+    for(let i=arr.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [arr[i],arr[j]] = [arr[j],arr[i]];
+    }
+    return arr;
+  }
+
+  function buildColumnCounts(){
+    let counts = new Array(9).fill(1);
+    let remaining = 15 - 9;
+    let guard = 0;
+    while(remaining > 0 && guard < 2000){
+      guard++;
+      const c = Math.floor(Math.random()*9);
+      if(counts[c] < 3){
+        counts[c]++;
+        remaining--;
+      }
+    }
+    return counts;
+  }
+
+  function buildRowAssignment(colCounts){
+    let colRows = colCounts.map(count => shuffle([0,1,2]).slice(0,count));
+    let rowCounts = [0,0,0];
+    colRows.forEach(rows => rows.forEach(r => rowCounts[r]++));
+
+    let guard = 0;
+    while(!(rowCounts[0]===5 && rowCounts[1]===5 && rowCounts[2]===5) && guard < 3000){
+      guard++;
+      const over = rowCounts.findIndex(x => x > 5);
+      const under = rowCounts.findIndex(x => x < 5);
+      if(over === -1 || under === -1) break;
+      let moved = false;
+      for(let c=0;c<9;c++){
+        if(colRows[c].includes(over) && !colRows[c].includes(under)){
+          colRows[c] = colRows[c].filter(r => r !== over);
+          colRows[c].push(under);
+          rowCounts[over]--;
+          rowCounts[under]++;
+          moved = true;
+          break;
+        }
+      }
+      if(!moved) break;
+    }
+    if(!(rowCounts[0]===5 && rowCounts[1]===5 && rowCounts[2]===5)){
+      return null;
+    }
+    return colRows;
+  }
+
+  function generateTicketGrid(){
+    let colRows = null;
+    let colCounts = null;
+    while(!colRows){
+      colCounts = buildColumnCounts();
+      colRows = buildRowAssignment(colCounts);
+    }
+    const grid = [[null,null,null,null,null,null,null,null,null],
+                  [null,null,null,null,null,null,null,null,null],
+                  [null,null,null,null,null,null,null,null,null]];
+
+    for(let c=0;c<9;c++){
+      const [lo,hi] = COL_RANGES[c];
+      const pool = [];
+      for(let n=lo;n<=hi;n++) pool.push(n);
+      shuffle(pool);
+      const picked = pool.slice(0, colCounts[c]).sort((a,b)=>a-b);
+      const rowsSorted = colRows[c].slice().sort((a,b)=>a-b);
+      rowsSorted.forEach((r,i) => { grid[r][c] = picked[i]; });
+    }
+    return grid;
+  }
+
+  function renderTicket(grid, index){
+    let html = `<div class="ticket-card"><div class="ticket-title">Ticket #${index}</div><table class="ticket-grid"><tbody>`;
+    for(let r=0;r<3;r++){
+      html += '<tr>';
+      for(let c=0;c<9;c++){
+        const val = grid[r][c];
+        if(val === null){
+          html += '<td class="blank"></td>';
+        } else {
+          html += `<td class="filled">${val}</td>`;
+        }
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table></div>';
+    return html;
+  }
+
+  function generateTickets(){
+    const count = Math.max(1, Math.min(12, parseInt(document.getElementById('ticketCount').value) || 1));
+    const container = document.getElementById('ticketsContainer');
+    container.innerHTML = '';
+    for(let i=1;i<=count;i++){
+      const grid = generateTicketGrid();
+      container.insertAdjacentHTML('beforeend', renderTicket(grid, i));
+    }
+  }
+
+  /* ---------------- Voice setup ---------------- */
+  let chosenVoice = null;
+
+  function pickVoice(){
+    if(!('speechSynthesis' in window)) return;
+    const voices = window.speechSynthesis.getVoices();
+    if(!voices.length) return;
+
+    const namePreferences = [
+      'samantha', 'victoria', 'karen', 'moira', 'tessa', 'fiona', 'susan',
+      'zira', 'female', 'woman', 'google uk english female', 'google us english'
+    ];
+
+    let match = null;
+    for(const pref of namePreferences){
+      match = voices.find(v => v.name.toLowerCase().includes(pref));
+      if(match) break;
+    }
+    if(!match){
+      match = voices.find(v => v.lang && v.lang.startsWith('en'));
+    }
+    chosenVoice = match || voices[0];
+  }
+
+  if('speechSynthesis' in window){
+    pickVoice();
+    window.speechSynthesis.onvoiceschanged = pickVoice;
+  }
+
+  function speak(text){
+    try{
+      if(!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const utter = new SpeechSynthesisUtterance(text);
+      if(chosenVoice) utter.voice = chosenVoice;
+      utter.rate = 0.85;
+      utter.pitch = 1.15;
+      utter.volume = 1;
+      window.speechSynthesis.speak(utter);
+    }catch(e){ /* speech not available, ignore */ }
+  }
+
+  /* ---------------- Number caller ---------------- */
+  const NUMBER_CALLS = {
+    1: "Kelly's eye, first one out!",
+    2: "One little duck, all on its own",
+    3: "Cup of tea, none for me",
+    4: "Knock at the door, who's there?",
+    5: "Man alive, only just started",
+    6: "Half a dozen eggs, don't drop 'em",
+    7: "Lucky number seven, cross your fingers",
+    8: "Garden gate, swinging in the wind",
+    9: "Doctor's orders, sit up straight",
+    10: "Uncle Ben, ten green bottles minus nine",
+    11: "Legs eleven, off to the races",
+    12: "One dozen donuts, save me one",
+    13: "Unlucky for some, not for you",
+    14: "Valentine's day, love is in the air",
+    15: "Young and keen, still full of energy",
+    16: "Sweet sixteen, never been kissed",
+    17: "Dancing queen, up on your feet",
+    18: "Coming of age, official grown-up",
+    19: "Goodbye teens, hello adulthood",
+    20: "One score, getting warmer",
+    21: "Key of the door, let yourself in",
+    22: "Two little ducks, quack quack",
+    23: "Thee and me, best of friends",
+    24: "Two dozen eggs, careful with the basket",
+    25: "Duck and dive, quarter century",
+    26: "Half a crown, spend it wisely",
+    27: "Gateway to heaven, almost there",
+    28: "In a state, don't panic",
+    29: "Rise and shine, nearly thirty",
+    30: "Dirty gertie, blushing already",
+    31: "Get up and run, thirty-one",
+    32: "Buckle my shoe, tie it tight",
+    33: "All the threes, dreamy eyes",
+    34: "Ask for more, still hungry",
+    35: "Jump and jive, shake a leg",
+    36: "Three dozen, basket's getting full",
+    37: "More than eleven, keep counting",
+    38: "Christmas cake, save a slice",
+    39: "Steps away, almost forty",
+    40: "Life begins, so they say",
+    41: "Time for fun, forty-one",
+    42: "Winnie the Pooh, hums a little tune",
+    43: "Down on your knees, stretch it out",
+    44: "Droopy drawers, hitch 'em up",
+    45: "Halfway there, keep going",
+    46: "Up to tricks, mischief managed",
+    47: "Four and seven, lucky heaven",
+    48: "Four dozen, getting crowded",
+    49: "PC, on the beat",
+    50: "Half a century, well played",
+    51: "Tweak of the thumb, nearly there",
+    52: "Danny La Rue, dressed to impress",
+    53: "Stuck in the tree, climb on down",
+    54: "Clean the floor, mop it up",
+    55: "Snakes alive, watch your step",
+    56: "Was she worth it, you decide",
+    57: "Heinz varieties, pick a flavour",
+    58: "Make them wait, patience please",
+    59: "Brighton line, all aboard",
+    60: "Five dozen, diamond shine",
+    61: "Baker's bun, fresh from the oven",
+    62: "Turn the screw, tighten up",
+    63: "Tickle me, giggle time",
+    64: "Red raw, sunburnt already",
+    65: "Old age pension, retire in style",
+    66: "Clickety click, all the sixes",
+    67: "Made in heaven, a perfect match",
+    68: "Pick a mate, choose wisely",
+    69: "Any way up, works both ways",
+    70: "Three score and ten, well seasoned",
+    71: "Bang on the drum, keep the beat",
+    72: "A crutch and a stick, steady now",
+    73: "Queen bee, buzzing along",
+    74: "Candy store, sweet tooth calling",
+    75: "Strive and strive, so close now",
+    76: "Trombones, lead the parade",
+    77: "Sunset strip, double lucky",
+    78: "Heaven's gate, almost home",
+    79: "One more time, keep it going",
+    80: "Gandhi's breakfast, eighty and wise",
+    81: "Fat lady sings soon, stretch those lungs",
+    82: "Straight on through, no stopping now",
+    83: "Time for tea, put the kettle on",
+    84: "Seven dozen, nearly the end",
+    85: "Staying alive, disco fever",
+    86: "Between the sticks, goalkeeper's number",
+    87: "Torquay in Devon, sunny holiday",
+    88: "Two fat ladies, wobble wobble",
+    89: "Nearly there, almost home free",
+    90: "Top of the shop, that's the lot!"
+  };
+
+  let calledNumbers = [];
+  let availableNumbers = [];
+
+  function initGame(){
+    availableNumbers = [];
+    for(let n=1;n<=90;n++) availableNumbers.push(n);
+    calledNumbers = [];
+    renderBoard();
+    renderHistory();
+    document.getElementById('coin').textContent = '?';
+    document.getElementById('coin').classList.remove('spin');
+    document.getElementById('funnyLine').innerHTML = '&nbsp;';
+    updateStatus();
+  }
+
+  function renderBoard(){
+    const board = document.getElementById('boardGrid');
+    board.innerHTML = '';
+    for(let n=1;n<=90;n++){
+      const cell = document.createElement('div');
+      cell.className = 'board-cell';
+      cell.id = 'cell-' + n;
+      cell.textContent = n;
+      if(calledNumbers.includes(n)) cell.classList.add('called');
+      board.appendChild(cell);
+    }
+    if(calledNumbers.length){
+      const last = calledNumbers[calledNumbers.length-1];
+      const lastCell = document.getElementById('cell-' + last);
+      if(lastCell){
+        lastCell.classList.remove('called');
+        lastCell.classList.add('current');
+      }
+    }
+  }
+
+  function renderHistory(){
+    const row = document.getElementById('historyRow');
+    row.innerHTML = '';
+    const last10 = calledNumbers.slice(-10);
+    last10.forEach(n => {
+      const chip = document.createElement('div');
+      chip.className = 'history-chip';
+      chip.textContent = n;
+      row.appendChild(chip);
+    });
+  }
+
+  function updateStatus(){
+    const left = availableNumbers.length;
+    const statusLine = document.getElementById('statusLine');
+    if(left === 0){
+      statusLine.textContent = 'All 90 numbers called — game over!';
+      document.getElementById('drawBtn').disabled = true;
+    } else {
+      statusLine.textContent = left + ' number' + (left===1?'':'s') + ' left in the bag';
+      document.getElementById('drawBtn').disabled = false;
+    }
+  }
+
+  function drawNumber(){
+    if(availableNumbers.length === 0) return;
+    const drawBtn = document.getElementById('drawBtn');
+    drawBtn.disabled = true;
+
+    const idx = Math.floor(Math.random() * availableNumbers.length);
+    const number = availableNumbers.splice(idx, 1)[0];
+
+    const coin = document.getElementById('coin');
+    coin.classList.remove('spin');
+    void coin.offsetWidth; // restart animation
+    coin.classList.add('spin');
+
+    setTimeout(() => {
+      coin.textContent = number;
+      calledNumbers.push(number);
+      const funny = NUMBER_CALLS[number] || '';
+      document.getElementById('funnyLine').textContent = funny ? '"' + funny + '"' : '\u00A0';
+      renderBoard();
+      renderHistory();
+      updateStatus();
+      speak(number + ', ' + funny);
+    }, 650);
+  }
+
+  function resetGame(){
+    initGame();
+  }
+
+  /* ---------------- Init ---------------- */
+  generateTickets();
+  initGame();
+</script>
+
+</body>
+</html>
